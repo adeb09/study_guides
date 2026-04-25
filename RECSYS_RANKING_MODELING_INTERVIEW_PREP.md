@@ -62,21 +62,21 @@ Loss: -[y·log(p) + (1-y)·log(1-p)]
 
 - **RankNet loss (Bradley-Terry model):**
 
-  $$
-  P(i \succ j) = \sigma(s_i - s_j)
-  $$
+```math
+P(i \succ j) = \sigma(s_i - s_j)
+```
 
-  $$
-  \mathcal{L} = -\sum_{(i,j): i \succ j} \log \sigma(s_i - s_j)
-  $$
+```math
+\mathcal{L} = -\sum_{(i,j): i \succ j} \log \sigma(s_i - s_j)
+```
 
 - **Hinge loss (SVMRank):** $\max(0, 1 - (s_i - s_j))$
 
 - **BPR (Bayesian Personalized Ranking):** Implicit-feedback-specific. Assumes observed interactions are better than unobserved ones. Maximizes posterior over user-item preferences:
 
-  $$
-  \mathcal{L}_{BPR} = -\sum_{u, i, j} \log \sigma(\hat{r}_{ui} - \hat{r}_{uj})
-  $$
+```math
+\mathcal{L}_{BPR} = -\sum_{u, i, j} \log \sigma(\hat{r}_{ui} - \hat{r}_{uj})
+```
 
   where item $i$ was interacted with and item $j$ was not.
 
@@ -100,17 +100,17 @@ Loss: -[y·log(p) + (1-y)·log(1-p)]
 
 - **ListNet (SoftMax-based):** Defines a probability distribution over permutations and minimizes KL divergence between predicted and ground-truth distributions.
 
-  $$
-  P_s(\pi_i) = \frac{\exp(s_i)}{\sum_j \exp(s_j)}
-  $$
+```math
+P_s(\pi_i) = \frac{\exp(s_i)}{\sum_j \exp(s_j)}
+```
 
 - **ListMLE:** Maximizes likelihood of the ground-truth permutation given predicted scores.
 
 - **LambdaRank / LambdaMART:** Does not define an explicit loss. Instead, computes *pseudo-gradients* that directly approximate the gradient of NDCG (or other non-differentiable metrics). This is the most important one in practice.
 
-  $$
-  \lambda_{ij} = \frac{\partial \mathcal{L}}{\partial s_i} \approx -\frac{|\Delta NDCG_{ij}|}{1 + e^{s_i - s_j}}
-  $$
+```math
+\lambda_{ij} = \frac{\partial \mathcal{L}}{\partial s_i} \approx -\frac{|\Delta NDCG_{ij}|}{1 + e^{s_i - s_j}}
+```
 
   The key insight: weight the pairwise gradient by how much swapping items i and j would change NDCG. Swapping items near the top of the list (where NDCG is more sensitive) gets a larger gradient.
 
@@ -159,9 +159,9 @@ Real FAANG systems never optimize a single objective. A typical ads ranking syst
 **Common approaches:**
 
 **Linear scalarization:**
-$$
+```math
 s = w_1 \cdot \hat{p}_{click} + w_2 \cdot \hat{p}_{purchase} \cdot \text{value} + \ldots
-$$
+```
 Simple, interpretable, but weights require constant tuning and don't handle Pareto fronts.
 
 **Multi-task learning (MTL):** Train a single model with shared lower layers and task-specific heads. Gradients from all objectives train shared representations. (Covered in depth in Section 6.)
@@ -218,9 +218,9 @@ Each stage has different model requirements. This section covers what goes in ea
 
 **Intuition:** Score is a linear combination of features. For binary outcomes (click/no-click), pass through sigmoid.
 
-$$
+```math
 s = \mathbf{w}^T \mathbf{x}, \quad p = \sigma(\mathbf{w}^T \mathbf{x})
-$$
+```
 
 **When it works well:**
 - Calibration: LR naturally produces calibrated probabilities. Critical for ads systems (bid × CTR needs to be on the same scale).
@@ -243,16 +243,16 @@ $$
 
 **Intuition:** Factorize the user-item interaction matrix $R \in \mathbb{R}^{|U| \times |I|}$ into user embeddings $P \in \mathbb{R}^{|U| \times k}$ and item embeddings $Q \in \mathbb{R}^{|I| \times k}$.
 
-$$
+```math
 \hat{r}_{ui} = \mathbf{p}_u^T \mathbf{q}_i
-$$
+```
 
 **ALS (Alternating Least Squares):** Alternate between fixing Q and solving for P (closed-form least squares) and vice versa. Parallelizable. Used in Spark MLlib. Good for explicit ratings.
 
 **BPR (Bayesian Personalized Ranking):** Pairwise loss on implicit feedback. Minimizes:
-$$
+```math
 \mathcal{L} = -\sum_{u, i \in \Omega_u, j \notin \Omega_u} \log \sigma(\mathbf{p}_u^T \mathbf{q}_i - \mathbf{p}_u^T \mathbf{q}_j) + \lambda \|\Theta\|^2
-$$
+```
 
 **Limits of pure MF:**
 - No cold-start: new users and items have no embeddings
@@ -263,14 +263,14 @@ $$
 
 **Intuition:** Generalize MF to arbitrary feature vectors. Every feature gets an embedding. Feature interaction is computed as dot product of embeddings.
 
-$$
+```math
 \hat{y} = w_0 + \sum_i w_i x_i + \sum_{i < j} \langle \mathbf{v}_i, \mathbf{v}_j \rangle x_i x_j
-$$
+```
 
 The key trick: second-order term is O(kd) not O(d²) via the identity:
-$$
+```math
 \sum_{i<j} \langle \mathbf{v}_i, \mathbf{v}_j \rangle x_i x_j = \frac{1}{2}\left[\left\|\sum_i \mathbf{v}_i x_i\right\|^2 - \sum_i \|\mathbf{v}_i\|^2 x_i^2\right]
-$$
+```
 
 **When FM works well:**
 - Sparse, high-cardinality categorical features (user_id, item_id, category)
@@ -285,9 +285,9 @@ $$
 
 **Intuition:** Additive ensemble of shallow trees. Each tree corrects the residuals of the previous ensemble. Score is sum of leaf values across all trees.
 
-$$
+```math
 \hat{y} = \sum_{t=1}^{T} f_t(\mathbf{x}), \quad f_t \in \mathcal{F} \text{ (decision trees)}
-$$
+```
 
 Objective: $\mathcal{L} = \sum_i \ell(y_i, \hat{y}_i) + \sum_t \Omega(f_t)$ where $\Omega$ regularizes tree complexity.
 
@@ -368,16 +368,16 @@ DNN Component: captures higher-order interactions
 Shared embedding layer between both components
 ```
 
-$$
+```math
 \hat{y} = \sigma(y_{FM} + y_{DNN})
-$$
+```
 
 **xDeepFM (Extreme Deep FM):** Introduces the **Compressed Interaction Network (CIN)**, which explicitly models feature interactions at the vector level (as opposed to bit-level in standard DNNs).
 
 At each CIN layer, the interaction is:
-$$
+```math
 X_k^h = \sum_{i=1}^{H_{k-1}} \sum_{j=1}^{m} W_{ij}^{k,h} (X_{k-1}^i \odot X_0^j)
-$$
+```
 
 This is an explicit, polynomial-style interaction that's more interpretable and controllable than a black-box DNN.
 
@@ -396,9 +396,9 @@ Interaction Layer: dot product of all pairs of embeddings + dense
 Top MLP: final scoring
 ```
 
-$$
+```math
 \hat{y} = \text{MLP}_{top}(\text{concat}[\text{interactions}, \mathbf{x}_{dense}])
-$$
+```
 
 where interactions = all pairwise dot products among embeddings.
 
@@ -416,9 +416,9 @@ where interactions = all pairwise dot products among embeddings.
 
 **Intuition:** Model the user's sequential interaction history as a time series. GRU captures temporal dynamics: recent items matter more, and the model can learn "reading → buying" patterns.
 
-$$
+```math
 \mathbf{h}_t = \text{GRU}(\mathbf{e}_{i_t}, \mathbf{h}_{t-1})
-$$
+```
 
 Predict next item from $\mathbf{h}_t$.
 
@@ -432,9 +432,9 @@ Predict next item from $\mathbf{h}_t$.
 
 Auto-regressive transformer for recommendation. Left-to-right attention (like GPT). At each position, attends to all previous interactions.
 
-$$
+```math
 \mathbf{S} = \text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d}}\right)V
-$$
+```
 
 Each attention head learns a different type of user-item relationship (recency, category affinity, etc.). Position encodings capture temporal ordering.
 
@@ -481,14 +481,14 @@ Uses bidirectional attention (like BERT). Randomly masks items in the sequence a
 
 Removes nonlinear transformations from standard GCN. Pure graph convolution:
 
-$$
+```math
 \mathbf{e}_u^{(k+1)} = \sum_{i \in \mathcal{N}_u} \frac{1}{\sqrt{|\mathcal{N}_u||\mathcal{N}_i|}} \mathbf{e}_i^{(k)}
-$$
+```
 
 Final embedding is the weighted sum across all layers:
-$$
+```math
 \mathbf{e}_u = \sum_{k=0}^{K} \alpha_k \mathbf{e}_u^{(k)}
-$$
+```
 
 **Why remove nonlinearity?** Empirically, nonlinear activations in GCNs hurt for collaborative filtering because they add noise without benefit — the interaction graph already provides the inductive signal.
 
@@ -566,9 +566,9 @@ Explicit, interpretable, but requires domain knowledge and misses long-tail comb
 FM: pairwise interactions via embedding dot products.
 
 **DCN V2 (Deep & Cross Network V2):** Explicit cross layer:
-$$
+```math
 \mathbf{x}_{l+1} = \mathbf{x}_0 \mathbf{x}_l^T \mathbf{w}_l + \mathbf{b}_l + \mathbf{x}_l
-$$
+```
 At each layer, the original input $\mathbf{x}_0$ is crossed with the current representation. Polynomial interaction of increasing degree across layers.
 
 ---
@@ -647,9 +647,9 @@ This is the section where staff-level candidates separate from senior candidates
 1. The user *examines* the item (position-dependent)
 2. The user finds it *relevant* (item-dependent)
 
-$$
+```math
 P(\text{click} | u, i, k) = P(\text{examine} | k) \cdot P(\text{relevant} | u, i)
-$$
+```
 
 where k is position. This is the *examination hypothesis*.
 
@@ -664,9 +664,9 @@ where k is position. This is the *examination hypothesis*.
 **Mitigation:**
 
 **Inverse Propensity Scoring (IPS):**
-$$
+```math
 \hat{\mathcal{L}}_{IPS} = \frac{1}{n}\sum_i \frac{\mathbb{1}[\text{click}_i]}{P(\text{examine} | k_i)} \cdot \ell(\hat{y}_i, y_i)
-$$
+```
 Reweight the loss by the inverse of the probability of being examined. Items shown rarely (low positions) get upweighted.
 
 **Position as a feature (PAL - Position-Aware Learning):**
@@ -684,9 +684,9 @@ Reweight the loss by the inverse of the probability of being examined. Items sho
 **Why it occurs:** The model sees only items that were *shown* to users. Items never surfaced have no click data. The training distribution is therefore biased toward the current ranking policy.
 
 **Formally:** If the current policy exposes item set $\mathcal{E}_u$ to user u, then:
-$$
+```math
 P(\text{observed interaction} | u, i) = P(\text{exposure} | u, i, \pi) \cdot P(\text{interaction} | u, i)
-$$
+```
 
 Training on observed data without correcting for exposure conflates "not shown" with "not relevant."
 
@@ -714,9 +714,9 @@ Training on observed data without correcting for exposure conflates "not shown" 
 
 **Mitigation:**
 - **Popularity-corrected softmax:** In sampled softmax training, correct for sampling frequency:
-  $$
-  P(i|u) = \frac{\exp(s_{ui} / \tau - \log q_i)}{\sum_j \exp(s_{uj} / \tau - \log q_j)}
-  $$
+```math
+P(i|u) = \frac{\exp(s_{ui} / \tau - \log q_i)}{\sum_j \exp(s_{uj} / \tau - \log q_j)}
+```
   where $q_i$ is item sampling probability (proportional to popularity). This is the standard correction in YouTube's two-tower training.
 
 - **IPS debiasing:** Downweight popular items by inverse of exposure probability.
@@ -745,9 +745,9 @@ If π_t has any bias (which all real policies do), that bias compounds over trai
 **Mitigation:**
 - **Counterfactual training:** Train on data generated by diverse policies, not just the current policy.
 - **Off-policy correction:** Use importance sampling to reweight data from old policies:
-  $$
-  w_i = \frac{\pi_{new}(a_i | s_i)}{\pi_{old}(a_i | s_i)}
-  $$
+```math
+w_i = \frac{\pi_{new}(a_i | s_i)}{\pi_{old}(a_i | s_i)}
+```
 - **Exploration diversity:** Intentionally serve a diverse mix to break the feedback loop.
 - **Long-horizon metrics:** Track content diversity and user satisfaction over weeks/months, not just session CTR.
 
@@ -790,21 +790,21 @@ If π_t has any bias (which all real policies do), that bias compounds over trai
 These are the unifying framework for most bias correction above.
 
 **IPS (Inverse Propensity Scoring):**
-$$
+```math
 \hat{\mathcal{L}}_{IPS}(\pi) = \frac{1}{n}\sum_i \frac{\pi(a_i|x_i)}{\pi_0(a_i|x_i)} \ell(y_i, \hat{y}(x_i, a_i))
-$$
+```
 Unbiased if propensities are correctly estimated. High variance when propensities are small (some actions are very rare under the logging policy).
 
 **SNIPS (Self-Normalized IPS):**
-$$
+```math
 \hat{\mathcal{L}}_{SNIPS} = \frac{\sum_i w_i \ell_i}{\sum_i w_i}
-$$
+```
 Normalizing reduces variance at the cost of introducing slight bias. Usually worth it in practice.
 
 **Doubly Robust (DR) Estimator:**
-$$
+```math
 \hat{\mathcal{L}}_{DR} = \frac{1}{n}\sum_i \hat{\ell}(x_i, a_i) + \frac{1}{n}\sum_i \frac{\pi(a_i|x_i)}{\pi_0(a_i|x_i)}\left(\ell_i - \hat{\ell}(x_i, a_i)\right)
-$$
+```
 
 Uses a *direct model* $\hat{\ell}$ as a baseline and corrects it with IPS on the residuals. **Doubly robust** means it's consistent if *either* the direct model or the propensity model is correctly specified (not necessarily both). Lower variance than pure IPS, unbiased if either component is right.
 
@@ -826,12 +826,12 @@ The dirty secret of recommendation systems: offline metrics frequently don't pre
 
 #### Precision@K and Recall@K
 
-$$
+```math
 \text{Precision@K} = \frac{|\text{Relevant items in top K}|}{K}
-$$
-$$
+```
+```math
 \text{Recall@K} = \frac{|\text{Relevant items in top K}|}{|\text{Total relevant items}|}
-$$
+```
 
 **When to use:**
 - Precision@K: When you have a fixed-size list and care about quality of that specific slice (e.g., top 5 product recommendations on homepage)
@@ -846,12 +846,12 @@ $$
 
 #### MAP (Mean Average Precision)
 
-$$
+```math
 \text{AP} = \frac{1}{|\text{Relevant}|} \sum_{k=1}^{K} \text{Precision@k} \cdot \mathbb{1}[\text{item}_k \text{ is relevant}]
-$$
-$$
+```
+```math
 \text{MAP} = \frac{1}{|Q|}\sum_{q} \text{AP}(q)
-$$
+```
 
 **Why MAP is better than Precision@K:**
 - Rewards models that rank relevant items earlier
@@ -865,12 +865,12 @@ $$
 
 The most important ranking metric for production recommendation systems.
 
-$$
+```math
 \text{DCG@K} = \sum_{k=1}^{K} \frac{2^{r_k} - 1}{\log_2(k+1)}
-$$
-$$
+```
+```math
 \text{NDCG@K} = \frac{\text{DCG@K}}{\text{IDCG@K}}
-$$
+```
 
 where IDCG is the DCG of the ideal ranking, and $r_k$ is the graded relevance of item at position k (e.g., 0–4 scale from human raters, or binary click/no-click).
 
@@ -887,9 +887,9 @@ where IDCG is the DCG of the ideal ranking, and $r_k$ is the graded relevance of
 
 #### AUC (Area Under the ROC Curve)
 
-$$
+```math
 \text{AUC} = P(\hat{s}_{i^+} > \hat{s}_{i^-})
-$$
+```
 
 Probability that a randomly chosen positive item is scored higher than a randomly chosen negative item.
 
@@ -898,18 +898,18 @@ Probability that a randomly chosen positive item is scored higher than a randoml
 **Key limitation:** AUC is a global metric — a model can have high AUC but be poor at ranking items *within a user's session*. Use per-query AUC (gauc) for session-level evaluation.
 
 **GAUC (Group AUC):** Average AUC computed per user:
-$$
+```math
 \text{GAUC} = \frac{\sum_u |\mathcal{D}_u| \cdot \text{AUC}_u}{\sum_u |\mathcal{D}_u|}
-$$
+```
 This is the metric that actually matters for ranking — it measures personalization quality, not just global discrimination.
 
 ---
 
 #### Log Loss (Binary Cross-Entropy)
 
-$$
+```math
 \mathcal{L} = -\frac{1}{N}\sum_i [y_i \log \hat{p}_i + (1-y_i)\log(1-\hat{p}_i)]
-$$
+```
 
 **When to use:** When calibrated probabilities matter (ads CTR → bid × CTR is a revenue formula). A model with lower log loss has better-calibrated probability estimates.
 
@@ -967,16 +967,16 @@ This is one of the most important problems in applied ML and frequently comes up
 Evaluate policy $\pi_{new}$ using data collected under policy $\pi_{old}$.
 
 **IPS estimator:**
-$$
+```math
 \hat{V}^{IPS}(\pi) = \frac{1}{n}\sum_i \frac{\pi(a_i|x_i)}{\pi_0(a_i|x_i)} r_i
-$$
+```
 
 **Doubly robust estimator:** (See Section 4.7 for formulation.)
 
 **Practical challenge:** When $\pi_{new}$ deviates significantly from $\pi_{old}$, importance weights become extreme. Clip weights at a threshold M:
-$$
+```math
 w_i = \min\left(\frac{\pi(a_i|x_i)}{\pi_0(a_i|x_i)}, M\right)
-$$
+```
 Clipping introduces bias but dramatically reduces variance.
 
 ---
@@ -1022,9 +1022,9 @@ How you construct negatives for training and evaluation matters enormously.
 **In-batch negatives:** Items from other examples in the same batch are treated as negatives. Efficient — no extra forward passes. Standard for two-tower training. Introduces popularity bias: popular items appear more often in batches and are thus over-represented as negatives.
 
 **Popularity-corrected in-batch:**
-$$
+```math
 \text{adjusted logit}_{ij} = \text{logit}_{ij} - \log q_j
-$$
+```
 where $q_j$ is item j's sampling probability. This is the correction YouTube uses.
 
 **Hard negatives:** Mine items that score highly under the current model but were not interacted with. Two sources:
@@ -1044,15 +1044,15 @@ where $q_j$ is item j's sampling probability. This is the correction YouTube use
 **Downsampling negatives:**
 - Train on a balanced or near-balanced subsample
 - **Critical:** You must correct calibration at inference time. If you downsample negatives by factor r, your model outputs $\hat{p}_{biased}$. True probability:
-  $$
-  \hat{p}_{true} = \frac{\hat{p}_{biased}}{\hat{p}_{biased} + (1 - \hat{p}_{biased}) / r}
-  $$
+```math
+\hat{p}_{true} = \frac{\hat{p}_{biased}}{\hat{p}_{biased} + (1 - \hat{p}_{biased}) / r}
+```
   This correction is essential for ads systems. Many teams skip it and wonder why their CTR predictions are wrong.
 
 **Focal loss:** Down-weights easy negatives during training:
-$$
+```math
 \mathcal{L}_{focal} = -\alpha_t (1 - p_t)^\gamma \log(p_t)
-$$
+```
 Focuses training on hard, misclassified examples. Originally from object detection but applies directly to imbalanced ranking.
 
 **Cost-sensitive learning:** Assign different per-class weights in the loss. Simple and effective.
@@ -1108,15 +1108,15 @@ Task Towers: separate MLP per task (CTR head, CVR head, rating head)
 ```
 
 **ESMM (Entire Space Multi-task Model, Alibaba):** Addresses the CVR prediction problem. CVR is only observed for *clicked* items, creating selection bias. ESMM models:
-$$
+```math
 P(\text{conversion}) = P(\text{click}) \cdot P(\text{conversion} | \text{click})
-$$
+```
 Both are trained jointly. The click model sees unbiased data (all impressions); the CVR model is trained over the click subspace, but gradients flow back through the product, allowing it to learn on the entire impression space.
 
 **MMoE (Multi-gate Mixture of Experts, Google):** Uses multiple expert networks with soft gating. Different tasks activate different combinations of experts:
-$$
+```math
 y_k = h^k(f^k(\mathbf{x})), \quad f^k(\mathbf{x}) = \sum_i g^k(\mathbf{x})_i \cdot e_i(\mathbf{x})
-$$
+```
 Each task has its own gating network $g^k$ that determines which experts to use.
 
 **PLE (Progressive Layered Extraction, Tencent):** Extends MMoE with task-specific experts + shared experts at each layer. Addresses "negative transfer" — when one task's gradients hurt another task.
@@ -1217,12 +1217,12 @@ Why this works: GBDT is excellent at feature interaction discovery on tabular da
 - Student: Smaller model with subset of features (fast enough for serving)
 
 **Knowledge distillation loss:**
-$$
+```math
 \mathcal{L} = \alpha \mathcal{L}_{hard} + (1-\alpha)\mathcal{L}_{soft}
-$$
-$$
+```
+```math
 \mathcal{L}_{soft} = \text{KL}\left(\text{softmax}\left(\frac{z_{teacher}}{T}\right) \| \text{softmax}\left(\frac{z_{student}}{T}\right)\right)
-$$
+```
 
 Temperature T > 1 produces softer, more informative probability distributions from the teacher.
 
