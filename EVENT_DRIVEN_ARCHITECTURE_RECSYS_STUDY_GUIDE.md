@@ -2200,4 +2200,36 @@ Focus areas: Avro/Protobuf schema evolution, schema registry integration, compat
 
 ---
 
+## Appendix: Concept Glossary
+
+### Fan-out
+
+**Fan-out** is when one event triggers multiple independent downstream consumers or actions simultaneously.
+
+The term comes from electronics, where one output signal "fans out" to drive multiple inputs. In distributed systems it means: **one write causes N reactions**.
+
+A concrete example — a single user click event fans out to:
+
+```
+One click event
+    │
+    ├──► Feature Store Consumer     → updates user feature vector
+    ├──► Training Data Consumer     → logs as a potential training label
+    ├──► Analytics Consumer         → increments engagement dashboards
+    ├──► Notification Consumer      → evaluates if a push notification should fire
+    └──► Abuse Detection Consumer   → checks for anomalous click patterns
+```
+
+One event, five independent reactions. That's a fan-out of 5.
+
+**Why it matters architecturally:**
+
+In a request-response world, the service recording the click would have to *call* all five downstream services itself — either in sequence (slow, one failure blocks the rest) or in parallel (complex, tightly coupled to N services). The click recorder's latency and reliability become a function of all five consumers combined.
+
+With EDA, the click recorder appends to the log and returns immediately. Each consumer independently reads from that log on its own schedule, with its own SLA and its own failure boundary. The producer is completely unaware of how many consumers exist.
+
+**The fan-out factor** — how many consumers a single event drives — is one of the key inputs in the EDA adoption decision framework (§11). A fan-out of 1–2 rarely justifies the operational overhead of a log-based broker. A fan-out of 5+ almost always does.
+
+---
+
 *This guide is intended as a living reference. The field evolves; the mental models are stable.*
